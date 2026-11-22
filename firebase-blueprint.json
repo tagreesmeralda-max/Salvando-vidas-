@@ -1,0 +1,159 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Medical profile, privacy settings, editable minimum fee, and 2FA configuration for a VidaQR user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Authenticated Firebase UID" },
+        "fullName": { "type": "string", "description": "Full name of the driver/rider" },
+        "email": { "type": "string", "description": "Verified account email" },
+        "phone": { "type": "string", "description": "Primary phone number in Guatemala" },
+        "dpi": { "type": "string", "description": "Guatemala DPI / CUI identifier" },
+        "bloodType": {
+          "type": "string",
+          "enum": ["O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-"]
+        },
+        "allergies": { "type": "string", "description": "Known medical allergies" },
+        "conditions": { "type": "string", "description": "Chronic medical conditions" },
+        "medications": { "type": "string", "description": "Current medications" },
+        "insuranceInfo": { "type": "string", "description": "IGSS or private medical insurance" },
+        "organDonor": { "type": "boolean" },
+        "department": { "type": "string", "description": "Guatemala department of residence" },
+        "minimumFeeGtq": { "type": "number", "description": "Editable minimum emergency service fee in GTQ" },
+        "shareMedicalInQr": { "type": "boolean" },
+        "privacyAccepted": { "type": "boolean" },
+        "qrToken": { "type": "string", "description": "Unique VidaQR lookup token" },
+        "totpSecret": { "type": "string", "description": "Base32 secret for 2FA TOTP verification" },
+        "totpEnabled": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Client submits FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Client submits FieldValue.serverTimestamp()" }
+      },
+      "required": ["userId", "fullName", "bloodType", "department", "minimumFeeGtq", "shareMedicalInQr", "privacyAccepted", "qrToken", "createdAt", "updatedAt"]
+    },
+    "EmergencyContact": {
+      "title": "EmergencyContact",
+      "description": "Emergency contact selected for automatic accident notifications.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "relationship": { "type": "string" },
+        "notifyAuto": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "phone", "relationship", "notifyAuto", "createdAt", "updatedAt"]
+    },
+    "VehicleRecord": {
+      "title": "VehicleRecord",
+      "description": "Registered vehicle (car or motorcycle) verified automatically by AI.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "vehicleType": { "type": "string", "enum": ["CARRO", "MOTO"] },
+        "plate": { "type": "string" },
+        "brandModel": { "type": "string" },
+        "color": { "type": "string" },
+        "aiVerified": { "type": "boolean" },
+        "aiConfidence": { "type": "integer" },
+        "aiDetectedType": { "type": "string" },
+        "aiSummary": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "vehicleType", "plate", "brandModel", "color", "aiVerified", "aiConfidence", "createdAt", "updatedAt"]
+    },
+    "PaymentTransaction": {
+      "title": "PaymentTransaction",
+      "description": "Tokenized encrypted payment record in GTQ.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "amountGtq": { "type": "number" },
+        "gatewayName": { "type": "string" },
+        "maskedLast4": { "type": "string" },
+        "tokenReference": { "type": "string" },
+        "encryptionProtocol": { "type": "string" },
+        "status": { "type": "string", "enum": ["APROBADO", "PENDIENTE"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "amountGtq", "gatewayName", "maskedLast4", "tokenReference", "encryptionProtocol", "status", "createdAt", "updatedAt"]
+    },
+    "EmergencyIncident": {
+      "title": "EmergencyIncident",
+      "description": "Real-time accident/SOS incident synced to cloud for paramedic and admin operations.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "bloodType": { "type": "string" },
+        "allergies": { "type": "string" },
+        "vehicleType": { "type": "string", "enum": ["CARRO", "MOTO"] },
+        "department": { "type": "string" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "accuracyMeters": { "type": "number" },
+        "status": { "type": "string", "enum": ["ACTIVA", "EN_RUTA", "ATENDIDA", "CERRADA"] },
+        "severity": { "type": "string", "enum": ["CRITICA", "ALTA", "MEDIA"] },
+        "minimumFeeGtq": { "type": "number" },
+        "notifiedContactsCount": { "type": "integer" },
+        "offlineQueued": { "type": "boolean" },
+        "notes": { "type": "string" },
+        "assignedUnit": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "bloodType", "vehicleType", "department", "latitude", "longitude", "status", "severity", "minimumFeeGtq", "notifiedContactsCount", "offlineQueued", "createdAt", "updatedAt"]
+    },
+    "ParamedicCard": {
+      "title": "ParamedicCard",
+      "description": "Opt-in consented vital medical emergency card accessed by exact QR token.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "cardToken": { "type": "string" },
+        "fullName": { "type": "string" },
+        "bloodType": { "type": "string" },
+        "allergies": { "type": "string" },
+        "conditions": { "type": "string" },
+        "medications": { "type": "string" },
+        "primaryContactName": { "type": "string" },
+        "primaryContactPhone": { "type": "string" },
+        "vehicleSummary": { "type": "string" },
+        "department": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "cardToken", "fullName", "bloodType", "department", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user medical profile and settings owned by userId"
+    },
+    "/users/{userId}/contacts/{contactId}": {
+      "schema": { "$ref": "#/entities/EmergencyContact" },
+      "description": "Emergency contacts for automatic accident notifications"
+    },
+    "/users/{userId}/vehicles/{vehicleId}": {
+      "schema": { "$ref": "#/entities/VehicleRecord" },
+      "description": "Registered vehicles with AI verification metadata"
+    },
+    "/users/{userId}/payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/PaymentTransaction" },
+      "description": "Tokenized encrypted GTQ payment receipts"
+    },
+    "/incidents/{incidentId}": {
+      "schema": { "$ref": "#/entities/EmergencyIncident" },
+      "description": "Accident SOS incidents accessible to owner and verified admin"
+    },
+    "/paramedic_cards/{cardToken}": {
+      "schema": { "$ref": "#/entities/ParamedicCard" },
+      "description": "Consented emergency vital card looked up strictly by exact QR token"
+    }
+  }
+}

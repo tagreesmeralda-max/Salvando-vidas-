@@ -1,0 +1,258 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isBootstrapAdmin() {
+      return isSignedIn() &&
+        request.auth.token.email_verified == true &&
+        request.auth.token.email == 'tagreesmeralda@gmail.com';
+    }
+
+    function isAdmin() {
+      return isBootstrapAdmin() ||
+        (isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    function isValidBloodType(bt) {
+      return bt in ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        data.fullName is string && data.fullName.size() >= 1 && data.fullName.size() <= 100 &&
+        (!('email' in data) || (data.email is string && data.email.size() <= 120)) &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 30)) &&
+        (!('dpi' in data) || (data.dpi is string && data.dpi.size() <= 30)) &&
+        isValidBloodType(data.bloodType) &&
+        (!('allergies' in data) || (data.allergies is string && data.allergies.size() <= 300)) &&
+        (!('conditions' in data) || (data.conditions is string && data.conditions.size() <= 300)) &&
+        (!('medications' in data) || (data.medications is string && data.medications.size() <= 300)) &&
+        (!('insuranceInfo' in data) || (data.insuranceInfo is string && data.insuranceInfo.size() <= 150)) &&
+        (!('organDonor' in data) || data.organDonor is bool) &&
+        data.department is string && data.department.size() >= 1 && data.department.size() <= 60 &&
+        data.minimumFeeGtq is number && data.minimumFeeGtq >= 50.0 && data.minimumFeeGtq <= 10000.0 &&
+        data.shareMedicalInQr is bool &&
+        data.privacyAccepted is bool &&
+        data.qrToken is string && data.qrToken.size() >= 4 && data.qrToken.size() <= 80 &&
+        (!('totpSecret' in data) || (data.totpSecret is string && data.totpSecret.size() <= 64)) &&
+        (!('totpEnabled' in data) || data.totpEnabled is bool) &&
+        isValidTimestamp(data.createdAt) &&
+        isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidContact(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 80 &&
+        data.phone is string && data.phone.size() >= 6 && data.phone.size() <= 30 &&
+        data.relationship is string && data.relationship.size() >= 1 && data.relationship.size() <= 50 &&
+        data.notifyAuto is bool &&
+        isValidTimestamp(data.createdAt) &&
+        isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidVehicle(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        data.vehicleType in ['CARRO', 'MOTO'] &&
+        data.plate is string && data.plate.size() >= 1 && data.plate.size() <= 20 &&
+        data.brandModel is string && data.brandModel.size() >= 1 && data.brandModel.size() <= 80 &&
+        data.color is string && data.color.size() >= 1 && data.color.size() <= 40 &&
+        data.aiVerified is bool &&
+        data.aiConfidence is int && data.aiConfidence >= 0 && data.aiConfidence <= 100 &&
+        (!('aiDetectedType' in data) || (data.aiDetectedType is string && data.aiDetectedType.size() <= 30)) &&
+        (!('aiSummary' in data) || (data.aiSummary is string && data.aiSummary.size() <= 500)) &&
+        isValidTimestamp(data.createdAt) &&
+        isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidPayment(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        data.amountGtq is number && data.amountGtq >= 50.0 && data.amountGtq <= 50000.0 &&
+        data.gatewayName is string && data.gatewayName.size() >= 1 && data.gatewayName.size() <= 60 &&
+        data.maskedLast4 is string && data.maskedLast4.size() == 4 &&
+        data.tokenReference is string && data.tokenReference.size() >= 4 && data.tokenReference.size() <= 80 &&
+        data.encryptionProtocol is string && data.encryptionProtocol.size() >= 1 && data.encryptionProtocol.size() <= 40 &&
+        data.status in ['APROBADO', 'PENDIENTE'] &&
+        isValidTimestamp(data.createdAt) &&
+        isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidIncident(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        data.userName is string && data.userName.size() >= 1 && data.userName.size() <= 100 &&
+        isValidBloodType(data.bloodType) &&
+        (!('allergies' in data) || (data.allergies is string && data.allergies.size() <= 300)) &&
+        data.vehicleType in ['CARRO', 'MOTO'] &&
+        data.department is string && data.department.size() >= 1 && data.department.size() <= 60 &&
+        data.latitude is number && data.latitude >= -90.0 && data.latitude <= 90.0 &&
+        data.longitude is number && data.longitude >= -180.0 && data.longitude <= 180.0 &&
+        (!('accuracyMeters' in data) || (data.accuracyMeters is number && data.accuracyMeters >= 0.0 && data.accuracyMeters <= 50000.0)) &&
+        data.status in ['ACTIVA', 'EN_RUTA', 'ATENDIDA', 'CERRADA'] &&
+        data.severity in ['CRITICA', 'ALTA', 'MEDIA'] &&
+        data.minimumFeeGtq is number && data.minimumFeeGtq >= 50.0 && data.minimumFeeGtq <= 10000.0 &&
+        data.notifiedContactsCount is int && data.notifiedContactsCount >= 0 && data.notifiedContactsCount <= 20 &&
+        data.offlineQueued is bool &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
+        (!('assignedUnit' in data) || (data.assignedUnit is string && data.assignedUnit.size() <= 100)) &&
+        isValidTimestamp(data.createdAt) &&
+        isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidParamedicCard(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        data.cardToken is string && data.cardToken.size() >= 4 && data.cardToken.size() <= 80 &&
+        data.fullName is string && data.fullName.size() >= 1 && data.fullName.size() <= 100 &&
+        isValidBloodType(data.bloodType) &&
+        (!('allergies' in data) || (data.allergies is string && data.allergies.size() <= 300)) &&
+        (!('conditions' in data) || (data.conditions is string && data.conditions.size() <= 300)) &&
+        (!('medications' in data) || (data.medications is string && data.medications.size() <= 300)) &&
+        (!('primaryContactName' in data) || (data.primaryContactName is string && data.primaryContactName.size() <= 80)) &&
+        (!('primaryContactPhone' in data) || (data.primaryContactPhone is string && data.primaryContactPhone.size() <= 30)) &&
+        (!('vehicleSummary' in data) || (data.vehicleSummary is string && data.vehicleSummary.size() <= 120)) &&
+        data.department is string && data.department.size() >= 1 && data.department.size() <= 60 &&
+        isValidTimestamp(data.createdAt) &&
+        isValidTimestamp(data.updatedAt);
+    }
+
+    match /admins/{userId} {
+      allow get: if isOwner(userId);
+      allow list, write: if false;
+    }
+
+    match /users/{userId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll(['userId', 'fullName', 'bloodType', 'department', 'minimumFeeGtq', 'shareMedicalInQr', 'privacyAccepted', 'qrToken', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'fullName', 'email', 'phone', 'dpi', 'bloodType', 'allergies', 'conditions', 'medications', 'insuranceInfo', 'organDonor', 'department', 'minimumFeeGtq', 'shareMedicalInQr', 'privacyAccepted', 'qrToken', 'totpSecret', 'totpEnabled', 'createdAt', 'updatedAt']) &&
+                       isValidUserProfile(incoming());
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'email', 'phone', 'dpi', 'bloodType', 'allergies', 'conditions', 'medications', 'insuranceInfo', 'organDonor', 'department', 'minimumFeeGtq', 'shareMedicalInQr', 'privacyAccepted', 'qrToken', 'totpSecret', 'totpEnabled', 'updatedAt']);
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      match /contacts/{contactId} {
+        allow get: if isOwner(userId) && isValidId(contactId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidId(contactId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'name', 'phone', 'relationship', 'notifyAuto', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'name', 'phone', 'relationship', 'notifyAuto', 'createdAt', 'updatedAt']) &&
+                         isValidContact(incoming());
+        allow update: if isOwner(userId) &&
+                         isValidId(contactId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidContact(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'relationship', 'notifyAuto', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(contactId);
+      }
+
+      match /vehicles/{vehicleId} {
+        allow get: if isOwner(userId) && isValidId(vehicleId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidId(vehicleId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'vehicleType', 'plate', 'brandModel', 'color', 'aiVerified', 'aiConfidence', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'vehicleType', 'plate', 'brandModel', 'color', 'aiVerified', 'aiConfidence', 'aiDetectedType', 'aiSummary', 'createdAt', 'updatedAt']) &&
+                         isValidVehicle(incoming());
+        allow update: if isOwner(userId) &&
+                         isValidId(vehicleId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidVehicle(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['vehicleType', 'plate', 'brandModel', 'color', 'aiVerified', 'aiConfidence', 'aiDetectedType', 'aiSummary', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(vehicleId);
+      }
+
+      match /payments/{paymentId} {
+        allow get: if isOwner(userId) && isValidId(paymentId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidId(paymentId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'amountGtq', 'gatewayName', 'maskedLast4', 'tokenReference', 'encryptionProtocol', 'status', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'amountGtq', 'gatewayName', 'maskedLast4', 'tokenReference', 'encryptionProtocol', 'status', 'createdAt', 'updatedAt']) &&
+                         isValidPayment(incoming());
+        allow update: if false;
+        allow delete: if false;
+      }
+    }
+
+    match /incidents/{incidentId} {
+      allow get: if isSignedIn() && isValidId(incidentId) && (isAdmin() || existing().userId == request.auth.uid);
+      allow list: if isSignedIn() && (isBootstrapAdmin() || existing().userId == request.auth.uid);
+      allow create: if isSignedIn() &&
+                       isValidId(incidentId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().status == 'ACTIVA' &&
+                       incoming().keys().hasAll(['userId', 'userName', 'bloodType', 'vehicleType', 'department', 'latitude', 'longitude', 'status', 'severity', 'minimumFeeGtq', 'notifiedContactsCount', 'offlineQueued', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'userName', 'bloodType', 'allergies', 'vehicleType', 'department', 'latitude', 'longitude', 'accuracyMeters', 'status', 'severity', 'minimumFeeGtq', 'notifiedContactsCount', 'offlineQueued', 'notes', 'assignedUnit', 'createdAt', 'updatedAt']) &&
+                       isValidIncident(incoming());
+      allow update: if isSignedIn() &&
+                       isValidId(incidentId) &&
+                       isValidIncident(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'severity', 'assignedUnit', 'notes', 'updatedAt'])) ||
+                         (existing().userId == request.auth.uid && existing().status != 'CERRADA' && incoming().status in ['ACTIVA', 'CERRADA'] && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'notes', 'latitude', 'longitude', 'accuracyMeters', 'updatedAt']))
+                       );
+      allow delete: if isSignedIn() && isValidId(incidentId) && isAdmin();
+    }
+
+    match /paramedic_cards/{cardToken} {
+      allow get: if isSignedIn() && isValidId(cardToken);
+      allow list: if false;
+      allow create: if isSignedIn() &&
+                       isValidId(cardToken) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().cardToken == cardToken &&
+                       incoming().keys().hasAll(['userId', 'cardToken', 'fullName', 'bloodType', 'department', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'cardToken', 'fullName', 'bloodType', 'allergies', 'conditions', 'medications', 'primaryContactName', 'primaryContactPhone', 'vehicleSummary', 'department', 'createdAt', 'updatedAt']) &&
+                       isValidParamedicCard(incoming());
+      allow update: if isSignedIn() &&
+                       isValidId(cardToken) &&
+                       isValidParamedicCard(incoming()) &&
+                       existing().userId == request.auth.uid &&
+                       incoming().userId == existing().userId &&
+                       incoming().cardToken == existing().cardToken &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'bloodType', 'allergies', 'conditions', 'medications', 'primaryContactName', 'primaryContactPhone', 'vehicleSummary', 'department', 'updatedAt']);
+      allow delete: if isSignedIn() && isValidId(cardToken) && existing().userId == request.auth.uid;
+    }
+  }
+}

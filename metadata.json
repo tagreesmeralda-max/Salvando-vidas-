@@ -1,0 +1,6 @@
+{
+  "name": "VidaQR",
+  "description": "Sistema de emergencia vial en Guatemala con código QR médico offline, alertas automáticas, geolocalización precisa, verificación vehicular por IA, cálculo de rutas para carro y moto, y panel administrativo con doble factor.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
